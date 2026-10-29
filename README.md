@@ -123,6 +123,22 @@ when either contact is listed); AUC of EI for those channels, per seizure
 - Stimulation-induced seizures (one per patient) are clearly worse: the stimulation artefacts
   before the onset are broadband and raise ER.
 
+**On the ieeg-prep derivative** (`workflow-epilepsy-ieeg/data/work/prep/ieeg`: same 24 clips,
+bipolar, bad channels marked, `onset_s` = the expert consensus onset; truth = its
+`_channels.tsv` `onset` column). `onset_s` is the expert onset, so anchoring on it is
+optimistic; the onset-blind chain removes onset and baseline from the input and lets DynaSD
+find the onset first:
+
+| Window anchored on | AUC, median [range] | LVFA (9) | other (15) | spontaneous (18) | stim-induced (6) |
+|---|---|---|---|---|---|
+| seizure-dynasd onset, DynaSD itself searching near the expert onset (the workflow default; `data/work/ei`) | **0.90** [0.34, 0.98] | 0.87 | 0.91 | 0.90 | 0.85 |
+| the expert onset (`onset_s`, `USE_ONSETS=false`; optimistic) | 0.89 [0.34, 0.99] | 0.89 | 0.93 | 0.92 | 0.75 |
+| **onset-blind**: DynaSD onset found without any onset in the input | 0.88 [0.31, 0.98] | 0.87 | 0.89 | 0.90 | 0.74 |
+| none (everything after the first 60 s) | 0.68 [0.25, 0.98] | 0.62 | 0.80 | 0.78 | 0.64 |
+
+Same picture as on the raw clips: ≈ 0.88–0.90 whenever the window is placed by an onset (even
+DynaSD's own, found blind), 0.68 without one, and no LVFA advantage.
+
 **Cross-check against EZEI.** On one clip (sub-HUP224 ictal519177, 10 channels, 100–180 s), the
 R package EZEI (KarasLabRAVE, run unchanged in its own R container, not bundled) and this app
 with EZEI's λ = 15, ν = 0.5 and γ to 140 Hz give: detection times equal within 0.25 s (one step)
@@ -137,7 +153,8 @@ ER series on the same scale (median ratio 0.93–1.14 per channel, correlation o
 `computeTypes: [standard, lambda]`, 1 vCPU / 2 GiB, 15 min timeout. Only the analysed window
 (80 s by default) is read, one block of 16 channels at a time, so memory hardly depends on
 the recording's length (without any onset the whole recording after the baseline is read, a
-block at a time: ~0.5 GB per hour of 1024 Hz data in a block).
+block at a time: ~0.5 GB per hour of 1024 Hz data in a block). On the 24 ieeg-prep clips the image takes 18.6 s
+for the whole run.
 
 Measured in Docker (linux/amd64 **emulated on an M-series Mac**, `--cpus 1 --memory 3008m`)
 on 3 demo clips (208, 116 and 106 channels, 1024 Hz): **8.6, 2.3 and 2.1 s** per clip (22 s for

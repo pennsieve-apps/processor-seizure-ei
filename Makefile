@@ -6,6 +6,8 @@ IMAGE ?= processor-seizure-ei:dev
 DEMO ?= ../workflow-epilepsy-ieeg/data/work/prep/ieeg
 ONSETS ?=
 TRUTH ?= $(DEMO)
+OUT ?= data/output-demo
+ANNOTATIONS ?=
 
 .DEFAULT: help
 
@@ -15,8 +17,8 @@ help:
 	@echo "make test      - pytest: synthetic BIDS-iEEG fixture through the processor (no Docker)"
 	@echo "make fixture   - write the synthetic fixture to data/fixture/ (linked/ieeg = an ieeg-prep derivative)"
 	@echo "make run       - build the image and run it in Docker over data/fixture/linked (ieeg/ subfolder), writing to data/output/"
-	@echo "make run-demo  - run the image over the demo data (DEMO=$(DEMO), optional ONSETS=<seizure-dynasd output>) into data/output-demo/"
-	@echo "make validate  - score data/output-demo/ against the expert labels (TRUTH=$(TRUTH))"
+	@echo "make run-demo  - run the image over the demo data (DEMO=$(DEMO), optional ONSETS=<seizure-dynasd output>) into OUT=$(OUT)"
+	@echo "make validate  - score OUT against the expert labels (TRUTH=$(TRUTH))"
 	@echo "make clean     - remove data/output*/ and data/fixture/"
 	@echo ""
 	@echo "PYTHON=$(PYTHON) (set PYTHON=.venv/bin/python after pip install -r requirements-dev.txt)"
@@ -38,13 +40,13 @@ run: clean fixture
 
 run-demo:
 	docker build --platform linux/amd64 -t $(IMAGE) .
-	rm -rf data/output-demo && mkdir -p data/output-demo
+	rm -rf "$(OUT)" && mkdir -p "$(OUT)"
 	docker run --rm --platform linux/amd64 --cpus 1 --memory 2g --env-file dev.env \
 		-v "$(abspath $(DEMO))":/data/input/ieeg:ro $(if $(ONSETS),-v "$(abspath $(ONSETS))":/data/input/onsets:ro) \
-		-v "$(CURDIR)/data/output-demo":/data/output $(IMAGE)
+		-v "$(abspath $(OUT))":/data/output $(IMAGE)
 
 validate:
-	$(PYTHON) scripts/validate.py data/output-demo "$(abspath $(TRUTH))"
+	$(PYTHON) scripts/validate.py "$(OUT)" "$(abspath $(TRUTH))" $(ANNOTATIONS)
 
 clean:
 	rm -rf data/output data/output-demo data/fixture
