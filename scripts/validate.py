@@ -99,6 +99,8 @@ def main(out_dir: Path, truth_dir: Path, annotations: Path | None = None) -> Non
     truth = truth_from_annotations(truth_dir) if (truth_dir / "annotations.tsv").exists() else truth_from_derivative(truth_dir)
     if annotations is not None:
         add_flags(truth, annotations)
+    if (out_dir / "ei" / "ei.csv").exists():  # the app writes OUTPUT_DIR/ei/
+        out_dir = out_dir / "ei"
     rows: dict[str, list[dict]] = {}
     for r in csv.DictReader(open(out_dir / "ei.csv")):
         rows.setdefault(r["recording_id"], []).append(r)

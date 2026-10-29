@@ -106,7 +106,7 @@ inputs:
       or any BIDS-iEEG dataset or EDF / BrainVision / FIF files. Referential recordings are
       re-referenced to neighbouring contacts (bipolar).
     mediaTypes:
-      - application/x-edf
+      - application/edf
       - text/csv
       - text/tab-separated-values
       - application/json
@@ -123,7 +123,9 @@ inputs:
 outputs:
   - name: ei
     description: >-
-      ei.csv (recording_id, channel, ei, detection_s, ratio_peak) and provenance.json.
+      ei/ei.csv (recording_id, channel, ei, detection_s, ratio_peak) and ei/provenance.json: one
+      folder named after the method, so the output can be one of several links into a fan-in
+      port (seizure-consensus methods).
     mediaTypes:
       - text/csv
       - application/json

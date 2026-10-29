@@ -35,8 +35,8 @@ or a `seizure` event); with neither, everything after the baseline.
 | Port | Direction | Placement | What |
 |---|---|---|---|
 | `ieeg` | input | `INPUT_DIR/ieeg/` | The ieeg-prep derivative (`recordings.csv`, EDF + `_channels.tsv` + `_events.tsv` + `_ieeg.json`), or any BIDS-iEEG dataset or EDF / BrainVision / FIF files, found by name anywhere under `INPUT_DIR` (symlinks followed). |
-| `onsets` | input, optional | `INPUT_DIR/onsets/` | `seizure_onsets.csv` from seizure-dynasd (recording_id, onset_s). |
-| `ei` | output | `OUTPUT_DIR` | `ei.csv` and `provenance.json`. |
+| `onsets` | input, optional | `INPUT_DIR/onsets/` | `seizure_onsets.csv` from seizure-dynasd (recording_id, onset_s), found by name anywhere under the port (seizure-dynasd writes it under `dynasd/`). |
+| `ei` | output | `OUTPUT_DIR/ei/` | `ei.csv` and `provenance.json`, under a folder named after the method so the output can be one of several links into a fan-in port (seizure-consensus `methods`) without name collisions. |
 
 Without links (everything merged at the root of `INPUT_DIR`) the files are found by name too.
 

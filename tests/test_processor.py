@@ -80,7 +80,9 @@ def test_epileptogenicity_weights_early_and_strong():
 def test_main_on_derivative(fixture_dir, tmp_path, monkeypatch):
     out = tmp_path / "out"
     assert run(monkeypatch, fixture_dir / "linked", out) == 0
-    rows = read_csv(out / "ei.csv")
+    # everything under a folder named after the method (one link of a fan-in port)
+    assert [q.name for q in out.iterdir()] == ["ei"]
+    rows = read_csv(out / "ei" / "ei.csv")
     assert set(rows[0]) == {"recording_id", "channel", "ei", "detection_s", "ratio_peak"}
     for rid in ("sub-01_task-ictal_run-01", "sub-01_task-ictal_run-02"):
         rr = {r["channel"]: r for r in rows if r["recording_id"] == rid}
@@ -90,7 +92,7 @@ def test_main_on_derivative(fixture_dir, tmp_path, monkeypatch):
         for c in ("B01-B02", "B02-B03", "B03-B04"):
             assert float(rr[c]["ei"]) < 0.1 and rr[c]["detection_s"] == ""
         assert make_fixture.ONSET - 2 <= float(rr["A01-A02"]["detection_s"]) <= make_fixture.ONSET + 5
-    prov = json.loads((out / "provenance.json").read_text())
+    prov = json.loads((out / "ei" / "provenance.json").read_text())
     st = prov["recordings"]["sub-01_task-ictal_run-01"]
     assert st["status"] == "ok" and st["window_s"] == [70.0, 150.0] and st["window_source"].startswith("onset_s")
 
@@ -98,20 +100,21 @@ def test_main_on_derivative(fixture_dir, tmp_path, monkeypatch):
 def test_onsets_input_anchors_the_window(fixture_dir, tmp_path, monkeypatch):
     """`ieeg` and `onsets` in subfolders (linked inputs); a DynaSD onset moves the window."""
     inp = tmp_path / "in"
-    (inp / "onsets").mkdir(parents=True)
+    # as seizure-dynasd writes it: its output folder dynasd/ inside the onsets port
+    (inp / "onsets" / "dynasd").mkdir(parents=True)
     (inp / "ieeg").symlink_to(fixture_dir / "linked" / "ieeg", target_is_directory=True)
-    (inp / "onsets" / "seizure_onsets.csv").write_text(
+    (inp / "onsets" / "dynasd" / "seizure_onsets.csv").write_text(
         "recording_id,onset_s,method\nsub-01_task-ictal_run-01,95.0,dynasd-lindda\nsub-01_task-ictal_run-02,,dynasd-lindda\n")
     out = tmp_path / "out"
     assert run(monkeypatch, inp, out) == 0
-    prov = json.loads((out / "provenance.json").read_text())
+    prov = json.loads((out / "ei" / "provenance.json").read_text())
     assert prov["recordings"]["sub-01_task-ictal_run-01"]["window_s"] == [75.0, 150.0]
     assert prov["recordings"]["sub-01_task-ictal_run-01"]["window_source"].startswith("seizure-dynasd onset")
     assert prov["recordings"]["sub-01_task-ictal_run-02"]["window_source"].startswith("onset_s (no DynaSD onset")
-    assert "onsets/seizure_onsets.csv" in prov["inputs"]
+    assert "onsets/dynasd/seizure_onsets.csv" in prov["inputs"]
     out2 = tmp_path / "out2"
     assert run(monkeypatch, inp, out2, USE_ONSETS="false") == 0
-    prov = json.loads((out2 / "provenance.json").read_text())
+    prov = json.loads((out2 / "ei" / "provenance.json").read_text())
     assert prov["recordings"]["sub-01_task-ictal_run-01"]["window_s"] == [70.0, 150.0]
 
 
@@ -122,16 +125,16 @@ def test_without_onset_uses_everything_after_the_baseline(tmp_path, monkeypatch)
     (fx / "plain" / "sub-02" / "ieeg" / "sub-02_task-broken_ieeg.edf").unlink()
     out = tmp_path / "out"
     assert run(monkeypatch, fx / "plain", out) == 0
-    st = json.loads((out / "provenance.json").read_text())["recordings"]["sub-02_task-ictal"]
+    st = json.loads((out / "ei" / "provenance.json").read_text())["recordings"]["sub-02_task-ictal"]
     assert st["window_s"] == [50.0, 150.0] and st["window_source"].startswith("after the baseline")
-    rr = {r["channel"]: float(r["ei"]) for r in read_csv(out / "ei.csv")}
+    rr = {r["channel"]: float(r["ei"]) for r in read_csv(out / "ei" / "ei.csv")}
     assert max(rr, key=rr.get) in ("A01-A02", "A02-A03")
 
 
 def test_broken_file_is_skipped(fixture_dir, tmp_path, monkeypatch):
     out = tmp_path / "out"
     assert run(monkeypatch, fixture_dir / "plain", out) == 0
-    prov = json.loads((out / "provenance.json").read_text())
+    prov = json.loads((out / "ei" / "provenance.json").read_text())
     assert prov["recordings"]["sub-02_task-broken"]["status"] == "failed"
     assert prov["recordings"]["sub-02_task-ictal"]["status"] == "ok"
 
@@ -152,8 +155,8 @@ def test_handler(fixture_dir, tmp_path, monkeypatch):
     monkeypatch.setenv("LAMBDA", "999")   # left over from a previous warm invocation: must be cleared
     event = {"inputDir": str(fixture_dir / "linked"), "outputDir": str(tmp_path / "out"), "NU": 2, "USE_ONSETS": True}
     result = handler.handler(event, context=None)
-    assert result["status"] == "ok" and (tmp_path / "out" / "ei.csv").exists()
-    prov = json.loads((tmp_path / "out" / "provenance.json").read_text())
+    assert result["status"] == "ok" and (tmp_path / "out" / "ei" / "ei.csv").exists()
+    prov = json.loads((tmp_path / "out" / "ei" / "provenance.json").read_text())
     assert prov["parameters"]["LAMBDA"] == 50.0 and prov["parameters"]["USE_ONSETS"] is True
     empty = tmp_path / "empty"
     empty.mkdir()

@@ -4,8 +4,12 @@ processor-seizure-ei: the Epileptogenicity Index (Bartolomei et al. 2008) per ch
 Reads the ieeg-prep derivative (or any BIDS-iEEG / EDF input) and, optionally, seizure_onsets.csv
 from seizure-dynasd, and writes
 
-  OUTPUT_DIR/ei.csv            recording_id, channel, ei, detection_s, ratio_peak
-  OUTPUT_DIR/provenance.json
+  OUTPUT_DIR/ei/ei.csv            recording_id, channel, ei, detection_s, ratio_peak
+  OUTPUT_DIR/ei/provenance.json
+
+Everything sits in a folder named after the method, so this output can be one of several links
+into one fan-in port (seizure-consensus `methods`) without its file names colliding. DynaSD's
+seizure_onsets.csv is found by name anywhere under the input (it arrives as onsets/dynasd/).
 
 The analysed window of each recording is [anchor - WINDOW_BEFORE_S, anchor + WINDOW_AFTER_S],
 where the anchor is the DynaSD onset (input `onsets`), else recordings.csv `onset_s` (or a
@@ -37,6 +41,7 @@ for noisy in ("mne", "matplotlib"):
     logging.getLogger(noisy).setLevel(logging.WARNING)
 
 APP_NAME = "processor-seizure-ei"
+OUTPUT_FOLDER = "ei"  # OUTPUT_DIR/<folder>/: the output can be one link of a fan-in port
 REPO_ROOT = Path(__file__).resolve().parent.parent
 PARAMETERS = ("LAMBDA", "NU", "H_S", "TAU_S", "WINDOW_S", "STEP_S", "GAMMA_HIGH_HZ",
               "WINDOW_BEFORE_S", "WINDOW_AFTER_S", "BASELINE_S", "USE_ONSETS")
@@ -146,7 +151,7 @@ def fmt(v, nd=4) -> str:
 def main() -> int:
     t_run = time.monotonic()
     input_dir = Path(os.environ.get("INPUT_DIR") or "/data/input")
-    output_dir = Path(os.environ.get("OUTPUT_DIR") or "/data/output")
+    output_dir = Path(os.environ.get("OUTPUT_DIR") or "/data/output") / OUTPUT_FOLDER
     try:
         p, o = env_params()
     except ValueError as exc:
