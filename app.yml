@@ -1,0 +1,129 @@
+# yaml-language-server: $schema=https://schemas.pennsieve.io/app-manifest/v1.json
+schemaVersion: "1.0"
+application:
+  name: Epileptogenicity Index
+  description: >-
+    The Epileptogenicity Index of Bartolomei, Chauvel & Wendling (2008) per channel and seizure,
+    from intracranial EEG (SEEG or ECoG): how strongly and how early each channel switches from
+    slow (theta, alpha) to fast (beta, gamma) activity at seizure onset, scaled to 0-1 per
+    seizure (> 0.3 reads as epileptogenic). A Python reimplementation from the paper; the search
+    window is anchored on the DynaSD onset when given.
+  type: processor
+  tags:
+    - ieeg
+    - seeg
+    - electrophysiology
+    - epilepsy
+    - neuroscience
+    - seizure-onset
+    - epileptogenicity
+runtime:
+  # Light: one recording at a time, an 80 s window, a block of channels at a time. The demo
+  # (24 clips, up to 208 channels at 1024 Hz) peaks at 0.45 GB and takes 2-9 s per clip
+  # (amd64 emulation, 1 vCPU; see README "Runtime"); fits a Lambda function.
+  cpu: 1024
+  memory: 2048
+  computeTypes:
+    - standard
+    - lambda
+  timeoutSeconds: 900
+parameters:
+  - name: LAMBDA
+    type: number
+    label: Detection threshold (lambda)
+    description: >-
+      Page-Hinkley threshold: an alarm is raised when the cumulative excess of the energy ratio
+      over its running mean (minus NU) exceeds LAMBDA, summed over 0.25 s steps. Higher = fewer,
+      later detections. The paper leaves it to the user.
+    defaultValue: 50
+    min: 0
+  - name: NU
+    type: number
+    label: Bias (nu)
+    description: >-
+      Page-Hinkley bias: the size of a rise in the energy ratio that must not raise an alarm.
+    defaultValue: 2
+    min: 0
+  - name: H_S
+    type: number
+    label: Averaging window H (s)
+    description: The energy ratio is averaged over H seconds after each channel's detection (the paper's 5 s).
+    defaultValue: 5
+    min: 0.1
+  - name: TAU_S
+    type: number
+    label: Delay offset tau (s)
+    description: Added to each channel's delay from the first detection before dividing (the paper's 1 s).
+    defaultValue: 1
+    min: 0.001
+  - name: WINDOW_S
+    type: number
+    label: Spectral window (s)
+    description: Length of the sliding periodogram window the band energies are computed on.
+    defaultValue: 1
+    min: 0.25
+    max: 10
+  - name: STEP_S
+    type: number
+    label: Spectral step (s)
+    description: Step of that window (LAMBDA is in units of the energy ratio summed over steps).
+    defaultValue: 0.25
+    min: 0.01
+    max: 5
+  - name: GAMMA_HIGH_HZ
+    type: number
+    label: Gamma upper edge (Hz)
+    description: Upper edge of the gamma band (the paper's 97 Hz; clipped to 0.45 x the sampling rate).
+    defaultValue: 97
+    min: 30
+  - name: WINDOW_BEFORE_S
+    type: number
+    label: Window before the onset (s)
+    description: The analysed window starts this long before the anchor onset (DynaSD's, else the recording's onset_s).
+    defaultValue: 20
+    min: 0
+  - name: WINDOW_AFTER_S
+    type: number
+    label: Window after the onset (s)
+    description: ... and ends this long after it (or at the end of the recording). Channels never detected get the end as their detection time.
+    defaultValue: 60
+    min: 5
+  - name: BASELINE_S
+    type: number
+    label: Baseline length (s)
+    description: Without any onset, the window is everything after the baseline (given by the input, else the first BASELINE_S seconds).
+    defaultValue: 60
+    min: 5
+  - name: USE_ONSETS
+    type: boolean
+    label: Use the DynaSD onsets
+    description: Anchor the window on seizure_onsets.csv from seizure-dynasd when it is given; false uses the recording's onset_s.
+    defaultValue: true
+inputs:
+  - name: ieeg
+    description: >-
+      The BIDS-iEEG derivative of ieeg-prep (recordings.csv, EDF + _channels.tsv + _events.tsv),
+      or any BIDS-iEEG dataset or EDF / BrainVision / FIF files. Referential recordings are
+      re-referenced to neighbouring contacts (bipolar).
+    mediaTypes:
+      - application/x-edf
+      - text/csv
+      - text/tab-separated-values
+      - application/json
+    placement: subfolder
+    required: true
+  - name: onsets
+    description: >-
+      Optional: the `onsets` output of seizure-dynasd (seizure_onsets.csv), used to place the
+      analysed window around each seizure's detected onset.
+    mediaTypes:
+      - text/csv
+    placement: subfolder
+    required: false
+outputs:
+  - name: ei
+    description: >-
+      ei.csv (recording_id, channel, ei, detection_s, ratio_peak) and provenance.json.
+    mediaTypes:
+      - text/csv
+      - application/json

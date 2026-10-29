@@ -1,0 +1,86 @@
+cff-version: "1.2.0"
+message: If you use this app, please cite it and the works it builds on, listed under references.
+type: software
+title: Epileptogenicity Index
+abstract: The Epileptogenicity Index of Bartolomei, Chauvel and Wendling (2008) per channel and seizure from
+  intracranial EEG, reimplemented in Python from the paper. A step of the Seizure Onset Localisation workflow.
+authors:
+- name: Pennsieve (University of Pennsylvania)
+repository-code: https://github.com/pennsieve-apps/processor-seizure-ei
+license: Apache-2.0
+keywords:
+- ieeg
+- seeg
+- electrophysiology
+- epilepsy
+- neuroscience
+- seizure-onset
+- epileptogenicity
+references:
+- type: article
+  title: 'Epileptogenicity of brain structures in human temporal lobe epilepsy: a quantified study from intracerebral
+    EEG'
+  authors:
+  - family-names: Bartolomei
+    given-names: Fabrice
+  - family-names: Chauvel
+    given-names: Patrick
+  - family-names: Wendling
+    given-names: Fabrice
+  year: 2008
+  journal: Brain
+  volume: 131
+  issue: '7'
+  start: '1818'
+  end: '1830'
+  doi: 10.1093/brain/awn111
+- type: article
+  title: MEG and EEG data analysis with MNE-Python
+  authors:
+  - family-names: Gramfort
+    given-names: Alexandre
+  - family-names: Luessi
+    given-names: Martin
+  - family-names: Larson
+    given-names: Eric
+  - family-names: Engemann
+    given-names: Denis A.
+  - family-names: Strohmeier
+    given-names: Daniel
+  - family-names: Brodbeck
+    given-names: Christian
+  - family-names: Goj
+    given-names: Roman
+  - family-names: Jas
+    given-names: Mainak
+  - family-names: Brooks
+    given-names: Teon
+  - family-names: Parkkonen
+    given-names: Lauri
+  - family-names: Hämäläinen
+    given-names: Matti
+  year: 2013
+  journal: Frontiers in Neuroscience
+  volume: 7
+  start: '267'
+  doi: 10.3389/fnins.2013.00267
+- type: data
+  title: Multi-Expert Seizure Annotation
+  authors:
+  - family-names: Ojemann
+    given-names: William K
+  - family-names: Zhou
+    given-names: Daniel
+  - family-names: Armstrong
+    given-names: Caren
+  - family-names: Sinha
+    given-names: Nishant
+  - family-names: Litt
+    given-names: Brian
+  - family-names: Conrad
+    given-names: Erin
+  year: 2026
+  publisher:
+    name: Pennsieve Discover
+  doi: 10.26275/dely-fzwx
+  license: CC-BY-4.0
